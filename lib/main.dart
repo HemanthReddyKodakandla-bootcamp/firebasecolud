@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_week4_firebase_app/feedback_bloc.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter_firebase_stream_app/seerecipes.dart';
 
 void main() => runApp(MyApp());
 
@@ -15,101 +14,115 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: FeedBackWidget(),
+      home: RecipeWidget(),
     );
   }
 }
 
-class FeedBackWidget extends StatefulWidget {
+class RecipeWidget extends StatefulWidget {
   @override
-  _FeedBackWidgetState createState() => _FeedBackWidgetState();
+  _RecipeWidgetState createState() => _RecipeWidgetState();
 }
 
-class _FeedBackWidgetState extends State<FeedBackWidget> {
+class _RecipeWidgetState extends State<RecipeWidget> {
 
   final _feedBackForm = GlobalKey<FormState>();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _ageController = TextEditingController();
-  TextEditingController _feedBackController = TextEditingController();
+  TextEditingController _titleController = TextEditingController();
+  TextEditingController _durationController = TextEditingController();
+  TextEditingController _imageUrlController = TextEditingController();
+  TextEditingController _ingrediantsController = TextEditingController();
+
+  bool isFav = false;
+
+  List ingredients = [
+    {
+      "title": "Paneer Makhani",
+      "duration": "1hr",
+      "ingredients": ["paneer","butter","chilli-powder"],
+      "isFav":false,
+      "imageUrl": "https://source.unsplash.com/random(266 kB)"
+    },
+    {
+      "title": "Chicken Tikka",
+      "duration": "1hr",
+      "ingredients": ["boneless chicken","butter","chilli-powder"],
+      "isFav":false,
+      "imageUrl": "https://source.unsplash.com/random(266 kB)"
+    },
+    {
+      "title": "Paneer Friedrice",
+      "duration": "1hr",
+      "ingredients": ["Paneer","butter","chilli-powder","rice"],
+      "isFav":false,
+      "imageUrl": "https://source.unsplash.com/random(266 kB)"
+    },
+    {
+      "title": "Chicken FriedRice",
+      "duration": "1hr",
+      "ingredients": ["boneless chicken","butter","chilli-powder","rice"],
+      "isFav":false,
+      "imageUrl": "https://source.unsplash.com/random(266 kB)"
+    }
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FeedBacks'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(),
       body: Container(
-        padding: EdgeInsets.symmetric(horizontal: 15.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _feedBackForm,
-              child: Column(
-                children: <Widget>[
-                  formWidget('Email', 'Enter Email', 'Email cann\'t be empty ', _emailController),
-                  formWidget('Name', 'Enter Name', 'Name cann\'t be empty ', _nameController),
-                  formWidget('Age', 'Enter Age', 'Age cann\'t be empty ', _ageController),
-                  formWidget('FeedBack', 'Enter feedback', 'Feedback cann\'t be empty ', _feedBackController),
-                  RaisedButton(
-                      onPressed: (){
-                    Map<String, dynamic> feedBackData = Map();
+        child: Form(
+          key: _feedBackForm,
+          child: Column(
+            children: <Widget>[
+              formWidget('Title', 'Enter title', 'Title cann\'t be empty ', _titleController),
+              formWidget('Duration', 'Enter Duration', 'Duration cann\'t be empty ', _durationController),
+              formWidget('imageUrl', 'Enter imageUrl', 'url cann\'t be empty ', _imageUrlController),
+              formWidget('ingrediants', 'Enter Comma separeted ingrediantas', 'ingrediants cann\'t be empty ', _ingrediantsController),
+              RaisedButton(
+                onPressed: (){
+                  Map<String, dynamic> feedBackData = Map();
 
-                    feedBackData['email'] = _emailController.text;
-                    feedBackData['name'] = _nameController.text;
-                    feedBackData['age'] = _ageController.text;
-                    feedBackData['feedBack'] = _feedBackController.text;
+                  feedBackData['title'] = _titleController.text;
+                  feedBackData['duration'] = _durationController.text;
+                  feedBackData['isFav'] = isFav;
+                  feedBackData['imageUrl'] = _imageUrlController.text;
 
-                    sendToFireBase(feedBackData);
-                    bloc.addFeedBack.add(feedBackData);
-                    setState(() {
-                        _emailController.clear();
-                        _nameController.clear();
-                        _ageController.clear();
-                        _feedBackController.clear();
-                      });
-                      },
-                    child: Text('Submit'),
-                  ),
-                  StreamBuilder(
-                    stream: bloc.feedBack,
-                      builder: (BuildContext context,AsyncSnapshot<Map<String, dynamic>> snapshot){
-                      if(snapshot.hasData){
-                        return Card(
-                          child: Column(
-                            children: <Widget>[
-                              Text(snapshot.data['email']),
-                              Text(snapshot.data['name']),
-                              Text(snapshot.data['age']),
-                              Text(snapshot.data['feedBack']),
-                            ],
-                          ),
-                        );
-                  }
-                      else{
-                        return Text('No Data');
-                      }
-                  })
+                  var ingred = _ingrediantsController.text.split(',');
+
+                  print('int ${ingred}');
+                  feedBackData['ingredients'] = ingred;
 
 
-                ],
+                sendToFireBase(feedBackData);
+
+                  setState(() {
+                    _titleController.clear();
+                    _durationController.clear();
+                    _ingrediantsController.clear();
+                    _imageUrlController.clear();
+                  });
+                  print(Firestore.instance.collection('recipes').snapshots()
+                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => showRecipeWidget()));
+                },
+                child: Text('Submit'),
               ),
+            ],
           ),
         ),
       ),
     );
   }
-
   Widget formWidget(String label,String hint,String errMsg,TextEditingController textEditingController){
-      
+
     return Padding(
-        padding: const EdgeInsets.only(top: 16.0),
+      padding: const EdgeInsets.only(top: 16.0),
       child: TextFormField(
         decoration: InputDecoration(
-          labelText: label,
+            labelText: label,
 
-          hintText: hint,
-          border: OutlineInputBorder()
+            hintText: hint,
+            border: OutlineInputBorder()
         ),
         validator: (value){
           if(value.isEmpty){
@@ -121,11 +134,8 @@ class _FeedBackWidgetState extends State<FeedBackWidget> {
       ),
     );
   }
-
   Future sendToFireBase(Map<String , dynamic> data) async{
-    print('feedback${data['email']}');
-//    await Firestore.instance.collection('feedback').add(data);
-    await Firestore.instance.collection('feedback').add(data).then((DocumentReference snapshot){
+    await Firestore.instance.collection('recipes').add(data).then((DocumentReference snapshot){
       print('feedback data ${snapshot.toString()}');
     });
   }

@@ -1,4 +1,4 @@
-package com.example.flutter_week4_firebase_app
+package com.firebasebootcamp.flutter_firebase_stream_app
 
 import android.os.Bundle
 
