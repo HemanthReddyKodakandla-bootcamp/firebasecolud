@@ -1,4 +1,4 @@
-# flutter_firebase_stream_app
+# flutter_week4_firebase_app
 
 A new Flutter application.
 
